@@ -220,7 +220,7 @@ with st.sidebar:
         st.image(LOGO_FILE, width=130)
     st.subheader("Agf 1 trup")
 
-    st.caption("Vælg atlet fra liste")
+    st.caption("Vælg atlet fra liste:")
     st.selectbox("Atlet", [ATHLETE_NAME])
 
     if st.button("Hent nyeste svar"):
