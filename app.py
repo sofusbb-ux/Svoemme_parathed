@@ -38,7 +38,24 @@ st.markdown(
         background-color: #0c121c;
         color: #ffffff;
     }
-    
+
+    /* AGF vandmærke i baggrunden i midten */
+    .stApp::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-image: url("https://upload.wikimedia.org/wikipedia/commons/e/e6/AGF_logo.svg");
+        background-repeat: no-repeat;
+        background-position: 55% center;
+        background-size: 450px;
+        opacity: 0.06;
+        filter: brightness(0) invert(1);
+        pointer-events: none;
+        z-index: 0;
+    }
     /* Sidebaren */
     [data-testid="stSidebar"] {
         background-color: #111a28;
