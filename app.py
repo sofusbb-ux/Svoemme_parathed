@@ -53,8 +53,9 @@ watermark_css = (
         background-repeat: no-repeat;
         background-position: 55% center;
         background-size: 450px;
-        opacity: 0.06;
-        filter: brightness(0) invert(1);
+        opacity: 0.12;
+        filter: grayscale(1) invert(1) contrast(2);
+        mix-blend-mode: screen;
         pointer-events: none;
         z-index: 0;
     }}
