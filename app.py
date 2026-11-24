@@ -1,22 +1,21 @@
-from datetime import date, datetime
+import base64
+import os
 import re
+from datetime import date, datetime
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-# --- CONFIGURATION & AGF TEMA ---
+# --- KONFIGURATION ---
 st.set_page_config(
     page_title="AGF Svømning – Træner Dashboard",
     page_icon="⚪",
     layout="wide",
 )
 
-# Indsæt dit Google Sheets .csv-link herunder:
-SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4z1vstw_vNusCuZdgYesIYbmvI52mD3sYKlTykpk370wyGAnfpbdru0VCj7c7CX9JBWzeBi_d1Evf/pub?gid=941831444&single=true&output=csv"
+SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4z1vstw_vNusCuZdgYesIYbmvI52mD3sYKlTykpk370wyGAnfpbdru0VCj7c7CX9JBWzeBi_d1Evf/pubhtml?gid=941831444&single=true"
 ATHLETE_NAME = "Sofus"
-
-# AGF Logo og styling (mørkeblå, hvid, grå)
-AGF_LOGO_URL = "https://images.squarespace-cdn.com/content/v1/5ea04c7df8b64a2754687d65/1589363388719-75S4E6G4ZOWUEMN1A6NZ/AGF_Svoemning_Logo.png"
+LOGO_FILE = "agf_logo.png"
 
 # Faste træningstider (0 = Mandag ... 6 = Søndag)
 TRAINING_SCHEDULE = {
@@ -29,25 +28,28 @@ TRAINING_SCHEDULE = {
     6: {"dag": "Søndag", "pas": ["Ingen fast planlagt træning"]},
 }
 
-# Tilpasning af AGF visualisering (CSS)
-st.markdown(
-    """
-    <style>
-    /* Generel mørk baggrund og AGF hvid/mørkeblå skrift */
-    .stApp {
-        background-color: #0c121c;
-        color: #ffffff;
-    }
 
-    /* AGF vandmærke i baggrunden i midten */
-    .stApp::before {
+# --- INDLÆS LOGO TIL BAGGRUND ---
+def get_base64_image(image_path: str) -> str:
+    if not os.path.exists(image_path):
+        return ""
+    with open(image_path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+
+logo_b64 = get_base64_image(LOGO_FILE)
+
+# --- AGF TEMA & FIFA 13 RESTITUTIONSBAR (CSS) ---
+watermark_css = (
+    f"""
+    .stApp::before {{
         content: "";
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
         height: 100vh;
-        background-image: url("https://upload.wikimedia.org/wikipedia/commons/e/e6/AGF_logo.svg");
+        background-image: url("data:image/png;base64,{logo_b64}");
         background-repeat: no-repeat;
         background-position: 55% center;
         background-size: 450px;
@@ -55,30 +57,42 @@ st.markdown(
         filter: brightness(0) invert(1);
         pointer-events: none;
         z-index: 0;
-    }
-    /* Sidebaren */
-    [data-testid="stSidebar"] {
+    }}
+    """
+    if logo_b64
+    else ""
+)
+
+st.markdown(
+    f"""
+    <style>
+    .stApp {{
+        background-color: #0c121c;
+        color: #ffffff;
+    }}
+
+    {watermark_css}
+
+    [data-testid="stSidebar"] {{
         background-color: #111a28;
         border-right: 1px solid #1f2e45;
-    }
-    
-    /* Info bokse mørkeblå */
-    .stAlert {
+    }}
+
+    .stAlert {{
         background-color: #162438 !important;
         border: 1px solid #0056b3 !important;
         color: #ffffff !important;
-    }
-    
-    /* Knapper */
-    .stButton>button {
+    }}
+
+    .stButton>button {{
         background-color: #ffffff !important;
         color: #0c121c !important;
         border-radius: 4px;
         font-weight: bold;
-    }
-    
-    /* FIFA 13 Restitutionsbar styling */
-    .cylinder-bar-bg {
+    }}
+
+    /* FIFA 13 Restitutionsbar */
+    .cylinder-bar-bg {{
         background: #1d2836;
         border: 2px solid #2e3e53;
         border-radius: 12px;
@@ -87,30 +101,27 @@ st.markdown(
         position: relative;
         overflow: hidden;
         box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.05);
-    }
-    
-    .cylinder-bar-fill {
+    }}
+
+    .cylinder-bar-fill {{
         height: 100%;
         border-radius: 10px 0 0 10px;
         box-shadow: inset 0 6px 12px rgba(255,255,255,0.4), inset 0 -6px 12px rgba(0,0,0,0.4);
         transition: width 0.5s ease-in-out;
-    }
-    
-    /* Grøn glød ved god restitution */
-    .glow-green {
+    }}
+
+    .glow-green {{
         background: linear-gradient(180deg, #5eff33 0%, #32b305 50%, #1e6d02 100%);
-    }
-    /* Gul glød ved moderat restitution */
-    .glow-yellow {
+    }}
+    .glow-yellow {{
         background: linear-gradient(180deg, #ffee33 0%, #b39b05 50%, #6d5d02 100%);
-    }
-    /* Rød glød ved lav restitution */
-    .glow-red {
+    }}
+    .glow-red {{
         background: linear-gradient(180deg, #ff3333 0%, #b30505 50%, #6d0202 100%);
-    }
+    }}
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
@@ -155,7 +166,6 @@ def load_sheet_data(url: str) -> pd.DataFrame:
 
 
 def calc_readiness(soevn: float, mental: float, fysisk: float):
-    """Beregner samlet paratheds-score (1-10) og bar farvetype."""
     soevn_score = min(10.0, max(1.0, (soevn / 8.0) * 10.0))
     score = round((soevn_score + mental + fysisk) / 3.0, 1)
 
@@ -182,14 +192,14 @@ def get_coach_pin() -> str:
     try:
         return str(st.secrets["COACH_PIN"])
     except Exception:
-        return "1234"  # Fallback-pinkode
+        return "5711"
 
 
 if "coach_logged_in" not in st.session_state:
     st.session_state["coach_logged_in"] = False
 
 if not st.session_state["coach_logged_in"]:
-    st.title("🔒 AGF Svømning – Træner Login")
+    st.title("AGF Svømning – Træner Login")
     st.write("Indtast pinkode for at åbne dashboardet.")
     with st.form("login_form"):
         pin_input = st.text_input("Pinkode", type="password", max_chars=10)
@@ -205,10 +215,10 @@ if not st.session_state["coach_logged_in"]:
 
 # --- SIDEBAR ---
 with st.sidebar:
-    # AGF logo i hvid / mørkeblå (eller officiel version, hvis hentet)
-    st.image("https://upload.wikimedia.org/wikipedia/commons/e/e6/AGF_logo.svg", width=110)
+    if os.path.exists(LOGO_FILE):
+        st.image(LOGO_FILE, width=130)
     st.subheader("AGF SVØMNING")
-    
+
     st.caption("Aktiv atlet (v1)")
     st.selectbox("Atlet", [ATHLETE_NAME])
 
@@ -233,16 +243,13 @@ except Exception as e:
     st.error(f"Kunne ikke hente data fra Google Sheets. Tjek at linket er publiceret som .csv. Fejl: {e}")
     st.stop()
 
-# Vælg dato (standard: i dag)
 valgt_dato = st.date_input("Vælg træningsdag", value=date.today())
 valgt_dato_str = valgt_dato.isoformat()
 ugedag_info = TRAINING_SCHEDULE[valgt_dato.weekday()]
 
-# Dagens træningsplan øverst (mørkeblå info boks)
 pas_tekst = "  |  ".join(ugedag_info["pas"])
 st.info(f"**{ugedag_info['dag']} ({valgt_dato.strftime('%d/%m/%Y')}) – Planlagte pas:** {pas_tekst}")
 
-# To kolonner: Venstre = Dagens svar, Højre = 7 målingers tendens
 col_left, col_right = st.columns([1, 1.35], gap="large")
 
 with col_left:
@@ -263,9 +270,8 @@ with col_left:
                 float(row["fysisk_friskhed"]),
             )
 
-            # Vis paratheds-score og FIFA 13 Restitutionsbar
-            percentage = int(score * 10) # F.eks. 8.0 bliver til 80%
-            
+            percentage = int(score * 10)
+
             st.markdown(
                 f"""
                 <div style="margin-bottom: 12px;">
@@ -275,14 +281,13 @@ with col_left:
                 <div class="cylinder-bar-bg">
                     <div class="cylinder-bar-fill {fill_class}" style="width: {percentage}%;"></div>
                 </div>
-                """, 
-                unsafe_allow_html=True
+                """,
+                unsafe_allow_html=True,
             )
 
             st.caption(check_deadline_status(str(row["tidspunkt_sendt"])))
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # Talværdier
             m1, m2, m3 = st.columns(3)
             m1.metric("Søvn", f"{row['soevn_timer']} t")
             m2.metric("Mental friskhed", f"{int(row['mental_friskhed'])} / 10")
@@ -297,7 +302,7 @@ with col_left:
                         <i>"{kommentar}"</i>
                     </div>
                     """,
-                    unsafe_allow_html=True
+                    unsafe_allow_html=True,
                 )
             else:
                 st.caption("Ingen kommentar tilføjet.")
@@ -329,7 +334,7 @@ with col_right:
                     y=df_hist["fysisk_friskhed"],
                     mode="lines+markers",
                     name="Fysisk friskhed (1-10)",
-                    line=dict(color="#2ca02c", width=3),  # Sportsgrøn
+                    line=dict(color="#2ca02c", width=3),
                     marker=dict(size=8),
                 )
             )
@@ -339,7 +344,7 @@ with col_right:
                     y=df_hist["mental_friskhed"],
                     mode="lines+markers",
                     name="Mental friskhed (1-10)",
-                    line=dict(color="#1f77b4", width=3),  # Blå
+                    line=dict(color="#1f77b4", width=3),
                     marker=dict(size=8),
                 )
             )
@@ -349,7 +354,7 @@ with col_right:
                     y=df_hist["soevn_timer"],
                     mode="lines+markers",
                     name="Søvn (timer)",
-                    line=dict(color="#ffffff", width=2, dash="dot"),  # Hvid
+                    line=dict(color="#ffffff", width=2, dash="dot"),
                     marker=dict(size=7),
                 )
             )
@@ -366,24 +371,24 @@ with col_right:
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
                 yaxis=dict(
-                    range=[0, 10.5], 
-                    title="Score / Timer", 
-                    gridcolor="#1f2e45", 
+                    range=[0, 10.5],
+                    title="Score / Timer",
+                    gridcolor="#1f2e45",
                     zerolinecolor="#1f2e45",
-                    tickfont=dict(color="#a4b3c6")
+                    tickfont=dict(color="#a4b3c6"),
                 ),
                 xaxis=dict(
-                    title="Dato", 
+                    title="Dato",
                     gridcolor="#1f2e45",
-                    tickfont=dict(color="#a4b3c6")
+                    tickfont=dict(color="#a4b3c6"),
                 ),
                 legend=dict(
-                    orientation="h", 
-                    yanchor="bottom", 
-                    y=1.02, 
-                    xanchor="left", 
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="left",
                     x=0,
-                    font=dict(color="#ffffff")
+                    font=dict(color="#ffffff"),
                 ),
                 margin=dict(l=10, r=10, t=40, b=10),
                 height=380,
