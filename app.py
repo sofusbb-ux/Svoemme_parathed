@@ -1,5 +1,5 @@
-import os
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
+import re
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -11,8 +11,9 @@ st.set_page_config(
     layout="wide",
 )
 
-DATA_FILE = "readiness_data.csv"
-DEFAULT_ATHLETE = "Svømmer 1"
+# Indsæt dit "Publicer på nettet (.csv)"-link fra Google Sheets herunder:
+SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4z1vstw_vNusCuZdgYesIYbmvI52mD3sYKlTykpk370wyGAnfpbdru0VCj7c7CX9JBWzeBi_d1Evf/pub?gid=941831444&single=true&output=csv"
+ATHLETE_NAME = "Svømmer 1"
 
 # Faste træningstider (0 = Mandag ... 6 = Søndag)
 TRAINING_SCHEDULE = {
@@ -25,82 +26,54 @@ TRAINING_SCHEDULE = {
     6: {"dag": "Søndag", "pas": ["Ingen fast planlagt træning"]},
 }
 
-COLUMNS = [
-    "dato",
-    "tidspunkt_sendt",
-    "atlet",
-    "soevn_timer",
-    "mental_friskhed",
-    "fysisk_friskhed",
-    "kommentar",
-    # Forberedt til senere Polar-integration
-    "polar_gns_puls",
-    "polar_kcal",
-    "polar_z1_min",
-    "polar_z2_min",
-    "polar_z3_min",
-    "polar_z4_min",
-    "polar_z5_min",
-]
+
+# --- DATAHENTNING FRA GOOGLE SHEETS ---
+def clean_danish_timestamp(val: str) -> str:
+    """Gør danske tidsstempler (f.eks. 24.11.2026 08.15.00) læsbare for Python."""
+    s = str(val).strip()
+    # Erstat punktum i klokkeslæt (08.15.00 -> 08:15:00)
+    s = re.sub(r"(\d{1,2})\.(\d{2})\.(\d{2})", r"\1:\2:\3", s)
+    return s
 
 
-# --- HJÆLPEFUNKTIONER ---
-def load_data() -> pd.DataFrame:
-    if os.path.exists(DATA_FILE):
-        df = pd.read_csv(DATA_FILE, dtype={"kommentar": str})
-        df["kommentar"] = df["kommentar"].fillna("")
-        return df
-    return pd.DataFrame(columns=COLUMNS)
+@st.cache_data(ttl=60)
+def load_sheet_data(url: str) -> pd.DataFrame:
+    if not url or "INDSÆT_DIT_CSV_LINK_HER" in url:
+        return pd.DataFrame()
+
+    raw = pd.read_csv(url)
+    if raw.empty or raw.shape[1] < 4:
+        return pd.DataFrame()
+
+    # Google Forms-kolonner i rækkefølge:
+    # 0: Tidsstempel, 1: Søvn, 2: Mental, 3: Fysisk, 4: Kommentar (valgfri)
+    df = pd.DataFrame()
+    ts_clean = raw.iloc[:, 0].apply(clean_danish_timestamp)
+    df["timestamp"] = pd.to_datetime(ts_clean, dayfirst=True, errors="coerce")
+    df = df.dropna(subset=["timestamp"]).copy()
+
+    df["dato"] = df["timestamp"].dt.strftime("%Y-%m-%d")
+    df["tidspunkt_sendt"] = df["timestamp"].dt.strftime("%H:%M")
+
+    # Håndtér både punktum og komma i søvn-timer
+    df["soevn_timer"] = pd.to_numeric(
+        raw.loc[df.index, raw.columns[1]].astype(str).str.replace(",", ".", regex=False),
+        errors="coerce",
+    )
+    df["mental_friskhed"] = pd.to_numeric(raw.loc[df.index, raw.columns[2]], errors="coerce")
+    df["fysisk_friskhed"] = pd.to_numeric(raw.loc[df.index, raw.columns[3]], errors="coerce")
+
+    if raw.shape[1] >= 5:
+        df["kommentar"] = raw.loc[df.index, raw.columns[4]].fillna("").astype(str).str.slice(0, 50)
+    else:
+        df["kommentar"] = ""
+
+    # Hvis svømmeren har svaret flere gange samme dag, behold det seneste svar
+    df = df.sort_values("timestamp").drop_duplicates(subset=["dato"], keep="last")
+    return df.reset_index(drop=True)
 
 
-def save_entry(entry: dict):
-    df = load_data()
-    # Overskriv hvis atleten allerede har svaret for samme dato
-    mask = (df["dato"] == entry["dato"]) & (df["atlet"] == entry["atlet"])
-    df = df[~mask]
-    new_row = pd.DataFrame([entry], columns=COLUMNS)
-    df = pd.concat([df, new_row], ignore_index=True)
-    df = df.sort_values("dato")
-    df.to_csv(DATA_FILE, index=False)
-
-
-def seed_demo_data():
-    """Indlæser 7 dages realistiske testdata med let stigende træthed."""
-    today = date.today()
-    demo_rows = [
-        (-6, "08:12", 8.5, 9, 8, "God energi efter weekenden"),
-        (-5, "08:25", 7.5, 8, 7, "Lidt tung i skuldrene efter morgentræning"),
-        (-4, "09:05", 7.0, 7, 7, "Fint overskud, travlt i skolen"),
-        (-3, "08:40", 6.5, 6, 6, "Lidt øm i benene"),
-        (-2, "10:15", 6.0, 5, 5, "Dårlig søvn, eksamenspres"),
-        (-1, "09:50", 7.0, 6, 6, "Bedre i dag, men stadig lidt træt"),
-        (0, "08:30", 8.0, 8, 7, "Klar til aftenpas!"),
-    ]
-    rows = []
-    for offset, tid, soevn, mental, fysisk, komm in demo_rows:
-        d = (today + timedelta(days=offset)).isoformat()
-        rows.append(
-            {
-                "dato": d,
-                "tidspunkt_sendt": tid,
-                "atlet": DEFAULT_ATHLETE,
-                "soevn_timer": soevn,
-                "mental_friskhed": mental,
-                "fysisk_friskhed": fysisk,
-                "kommentar": komm,
-                "polar_gns_puls": None,
-                "polar_kcal": None,
-                "polar_z1_min": None,
-                "polar_z2_min": None,
-                "polar_z3_min": None,
-                "polar_z4_min": None,
-                "polar_z5_min": None,
-            }
-        )
-    pd.DataFrame(rows, columns=COLUMNS).to_csv(DATA_FILE, index=False)
-
-
-def calc_readiness(soevn: float, mental: int, fysisk: int):
+def calc_readiness(soevn: float, mental: float, fysisk: float):
     """Beregner samlet paratheds-score (1-10) og trafiklys-status."""
     soevn_score = min(10.0, max(1.0, (soevn / 8.0) * 10.0))
     score = round((soevn_score + mental + fysisk) / 3.0, 1)
@@ -123,48 +96,51 @@ def check_deadline_status(tid_str: str) -> str:
         return f"Modtaget kl. {tid_str}"
 
 
-# --- SIDEBAR (NAVIGATION) ---
+# --- SIDEBAR ---
 st.sidebar.title("🏊 Svømme-Parathed")
-visning = st.sidebar.radio(
-    "Vælg visning",
-    ["Træner-dashboard (kl. 12)", "Atlet-indtastning (08–12)"],
-)
-
-st.sidebar.divider()
 st.sidebar.caption("Aktiv atlet (v1)")
-aktiv_atlet = st.sidebar.selectbox("Atlet", [DEFAULT_ATHLETE])
+st.sidebar.selectbox("Atlet", [ATHLETE_NAME])
 
-st.sidebar.divider()
-if st.sidebar.button("Indlæs 7 dages testdata"):
-    seed_demo_data()
-    st.sidebar.success("Testdata indlæst!")
+if st.sidebar.button("🔄 Hent nyeste svar"):
+    st.cache_data.clear()
     st.rerun()
 
+st.sidebar.divider()
+st.sidebar.caption("Data opdateres automatisk fra Google Sheets hvert minut.")
 
-# ==========================================
-# VISNING 1: TRÆNER-DASHBOARD
-# ==========================================
-if visning == "Træner-dashboard (kl. 12)":
-    df = load_data()
-    df_atlet = df[df["atlet"] == aktiv_atlet].sort_values("dato")
 
-    st.title(f"Træner-dashboard – {aktiv_atlet}")
+# --- TRÆNER-DASHBOARD ---
+st.title(f"Træner-dashboard – {ATHLETE_NAME}")
 
-    # Vælg dato (standard: i dag)
-    valgt_dato = st.date_input("Vælg træningsdag", value=date.today())
-    valgt_dato_str = valgt_dato.isoformat()
-    ugedag_info = TRAINING_SCHEDULE[valgt_dato.weekday()]
+if "INDSÆT_DIT_CSV_LINK_HER" in SHEET_CSV_URL:
+    st.error("Husk at indsætte dit Google Sheets `.csv`-link i `SHEET_CSV_URL` i `app.py`.")
+    st.stop()
 
-    # Dagens træningsplan øverst
-    pas_tekst = "  |  ".join(ugedag_info["pas"])
-    st.info(f"**{ugedag_info['dag']} ({valgt_dato.strftime('%d/%m/%Y')}) – Planlagte pas:** {pas_tekst}")
+try:
+    df = load_sheet_data(SHEET_CSV_URL)
+except Exception as e:
+    st.error(f"Kunne ikke hente data fra Google Sheets. Tjek at linket er publiceret som .csv. Fejl: {e}")
+    st.stop()
 
-    # To kolonner: Venstre = Dagens svar, Højre = 7 målingers tendens
-    col_left, col_right = st.columns([1, 1.35], gap="large")
+# Vælg dato (standard: i dag)
+valgt_dato = st.date_input("Vælg træningsdag", value=date.today())
+valgt_dato_str = valgt_dato.isoformat()
+ugedag_info = TRAINING_SCHEDULE[valgt_dato.weekday()]
 
-    with col_left:
-        st.subheader("Dagens status")
-        dagens_raekke = df_atlet[df_atlet["dato"] == valgt_dato_str]
+# Dagens træningsplan øverst
+pas_tekst = "  |  ".join(ugedag_info["pas"])
+st.info(f"**{ugedag_info['dag']} ({valgt_dato.strftime('%d/%m/%Y')}) – Planlagte pas:** {pas_tekst}")
+
+# To kolonner: Venstre = Dagens svar, Højre = 7 målingers tendens
+col_left, col_right = st.columns([1, 1.35], gap="large")
+
+with col_left:
+    st.subheader("Dagens status")
+
+    if df.empty:
+        st.warning("Ingen svar fundet i Google Sheetet endnu.")
+    else:
+        dagens_raekke = df[df["dato"] == valgt_dato_str]
 
         if dagens_raekke.empty:
             st.warning("Ingen melding modtaget for denne dato endnu (deadline kl. 12:00).")
@@ -172,11 +148,10 @@ if visning == "Træner-dashboard (kl. 12)":
             row = dagens_raekke.iloc[-1]
             score, status_tekst, status_type = calc_readiness(
                 float(row["soevn_timer"]),
-                int(row["mental_friskhed"]),
-                int(row["fysisk_friskhed"]),
+                float(row["mental_friskhed"]),
+                float(row["fysisk_friskhed"]),
             )
 
-            # Trafiklys-boks
             if status_type == "success":
                 st.success(f"**{status_tekst}** — Samlet score: **{score} / 10**")
             elif status_type == "warning":
@@ -186,13 +161,11 @@ if visning == "Træner-dashboard (kl. 12)":
 
             st.caption(check_deadline_status(str(row["tidspunkt_sendt"])))
 
-            # Nøgletal
             m1, m2, m3 = st.columns(3)
             m1.metric("Søvn", f"{row['soevn_timer']} t")
             m2.metric("Mental friskhed", f"{int(row['mental_friskhed'])} / 10")
             m3.metric("Fysisk friskhed", f"{int(row['fysisk_friskhed'])} / 10")
 
-            # Kommentar
             st.markdown("**Kommentar fra atleten:**")
             kommentar = str(row["kommentar"]).strip()
             if kommentar:
@@ -200,22 +173,23 @@ if visning == "Træner-dashboard (kl. 12)":
             else:
                 st.caption("Ingen kommentar tilføjet.")
 
-        # Placeholder til senere Polar-integration
-        st.divider()
-        with st.expander("Polar-sensor data (kommer i v2)", expanded=False):
-            st.caption(
-                "Her kobles puls, kcal og minutter i pulszone 1–5 på, når "
-                "sensor-compliance er på plads."
-            )
+    st.divider()
+    with st.expander("Polar-sensor data (kommer i v2)", expanded=False):
+        st.caption(
+            "Her kobles puls, kcal og minutter i pulszone 1–5 på, når "
+            "sensor-compliance er på plads."
+        )
 
-    with col_right:
-        st.subheader("Tendens – sidste 7 målinger")
+with col_right:
+    st.subheader("Tendens – sidste 7 målinger")
 
-        # Tag de seneste 7 målinger op til og med den valgte dato
-        df_hist = df_atlet[df_atlet["dato"] <= valgt_dato_str].tail(7).copy()
+    if df.empty:
+        st.info("Ingen historik endnu.")
+    else:
+        df_hist = df[df["dato"] <= valgt_dato_str].tail(7).copy()
 
         if df_hist.empty:
-            st.info("Ingen historik endnu. Brug 'Indlæs 7 dages testdata' i sidebaren eller indtast et svar.")
+            st.info("Ingen målinger på eller før den valgte dato.")
         else:
             df_hist["dato_label"] = pd.to_datetime(df_hist["dato"]).dt.strftime("%d/%m")
 
@@ -251,7 +225,6 @@ if visning == "Træner-dashboard (kl. 12)":
                 )
             )
 
-            # Advarselslinje ved 5 for hurtigt at spotte træthed
             fig.add_hline(
                 y=5,
                 line_dash="dash",
@@ -271,7 +244,6 @@ if visning == "Træner-dashboard (kl. 12)":
 
             st.plotly_chart(fig, use_container_width=True)
 
-            # Kompakt oversigtstabel under grafen
             with st.expander("Se rå tal for de sidste 7 målinger"):
                 vis_df = df_hist[
                     ["dato", "soevn_timer", "mental_friskhed", "fysisk_friskhed", "kommentar"]
@@ -285,64 +257,3 @@ if visning == "Træner-dashboard (kl. 12)":
                     }
                 )
                 st.dataframe(vis_df, use_container_width=True, hide_index=True)
-
-
-# ==========================================
-# VISNING 2: ATLET-INDTASTNING
-# ==========================================
-else:
-    st.title(f"Morgen-tjek ind – {aktiv_atlet}")
-    st.write("Besvar mellem **kl. 08:00 og 12:00**, så træneren kan planlægge dagens træning.")
-
-    with st.form("atlet_form", clear_on_submit=False):
-        dato_input = st.date_input("Dato", value=date.today())
-
-        soevn_input = st.slider(
-            "Hvor mange timer har du sovet i nat?",
-            min_value=0.0,
-            max_value=12.0,
-            value=8.0,
-            step=0.5,
-        )
-
-        mental_input = st.slider(
-            "Mental friskhed (1 = meget høj stress / presset, 10 = helt rolig / stort overskud)",
-            min_value=1,
-            max_value=10,
-            value=7,
-        )
-
-        fysisk_input = st.slider(
-            "Fysisk friskhed (1 = helt udkørt / meget øm, 10 = helt frisk og klar)",
-            min_value=1,
-            max_value=10,
-            value=7,
-        )
-
-        kommentar_input = st.text_input(
-            "Evt. kort kommentar til træneren (maks 50 tegn)",
-            max_chars=50,
-            placeholder="F.eks. Lidt øm i højre skulder",
-        )
-
-        sendt = st.form_submit_button("Send melding til træneren", type="primary")
-
-        if sendt:
-            entry = {
-                "dato": dato_input.isoformat(),
-                "tidspunkt_sendt": datetime.now().strftime("%H:%M"),
-                "atlet": aktiv_atlet,
-                "soevn_timer": soevn_input,
-                "mental_friskhed": mental_input,
-                "fysisk_friskhed": fysisk_input,
-                "kommentar": kommentar_input.strip(),
-                "polar_gns_puls": None,
-                "polar_kcal": None,
-                "polar_z1_min": None,
-                "polar_z2_min": None,
-                "polar_z3_min": None,
-                "polar_z4_min": None,
-                "polar_z5_min": None,
-            }
-            save_entry(entry)
-            st.success("Tak! Din melding er gemt og klar på trænerens dashboard.")
