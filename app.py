@@ -95,7 +95,30 @@ def check_deadline_status(tid_str: str) -> str:
     except Exception:
         return f"Modtaget kl. {tid_str}"
 
+# --- PINKODE-BESKYTTELSE ---
+def get_coach_pin() -> str:
+    try:
+        return str(st.secrets["COACH_PIN"])
+    except Exception:
+        return "1234"  # Fallback-pinkode (skift den her eller i Streamlit Secrets)
 
+
+if "coach_logged_in" not in st.session_state:
+    st.session_state["coach_logged_in"] = False
+
+if not st.session_state["coach_logged_in"]:
+    st.title("🔒 Træner-login")
+    st.write("Indtast pinkode for at åbne dashboardet.")
+    with st.form("login_form"):
+        pin_input = st.text_input("Pinkode", type="password", max_chars=10)
+        submitted = st.form_submit_button("Log ind", type="primary")
+        if submitted:
+            if pin_input == get_coach_pin():
+                st.session_state["coach_logged_in"] = True
+                st.rerun()
+            else:
+                st.error("Forkert pinkode. Prøv igen.")
+    st.stop()
 # --- SIDEBAR ---
 st.sidebar.title("🏊 Svømme-Parathed")
 st.sidebar.caption("Aktiv atlet (v1)")
