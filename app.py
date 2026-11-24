@@ -218,7 +218,7 @@ if not st.session_state["coach_logged_in"]:
 with st.sidebar:
     if os.path.exists(LOGO_FILE):
         st.image(LOGO_FILE, width=130)
-    st.subheader("AGF SVØMNING")
+    st.subheader("Agf 1 trup")
 
     st.caption("Aktiv atlet (v1)")
     st.selectbox("Atlet", [ATHLETE_NAME])
