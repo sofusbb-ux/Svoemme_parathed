@@ -8,7 +8,7 @@ import streamlit as st
 
 # --- KONFIGURATION ---
 st.set_page_config(
-    page_title="AGF Svømning – Træner Dashboard",
+    page_title="AGF Svømning – Performance Dashboard",
     page_icon="⚪",
     layout="wide",
 )
@@ -29,7 +29,7 @@ TRAINING_SCHEDULE = {
 }
 
 
-# --- INDLÆS LOGO TIL BAGGRUND ---
+# --- INDLÆS LOGO TIL BAGGRUND & SIDEBAR ---
 def get_base64_image(image_path: str) -> str:
     if not os.path.exists(image_path):
         return ""
@@ -39,7 +39,7 @@ def get_base64_image(image_path: str) -> str:
 
 logo_b64 = get_base64_image(LOGO_FILE)
 
-# --- AGF TEMA & FIFA 13 RESTITUTIONSBAR (CSS) ---
+# --- KITMAN LABS / AGF PERFORMANCE TEMA (CSS) ---
 watermark_css = (
     f"""
     .stApp::before {{
@@ -51,9 +51,9 @@ watermark_css = (
         height: 100vh;
         background-image: url("data:image/png;base64,{logo_b64}");
         background-repeat: no-repeat;
-        background-position: 55% center;
-        background-size: 450px;
-        opacity: 0.12;
+        background-position: 56% center;
+        background-size: 460px;
+        opacity: 0.08;
         filter: grayscale(1) invert(1) contrast(2);
         mix-blend-mode: screen;
         pointer-events: none;
@@ -67,47 +67,140 @@ watermark_css = (
 st.markdown(
     f"""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    html, body, [class*="css"], .stApp {{
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    }}
+
     .stApp {{
-        background-color: #0c121c;
-        color: #ffffff;
+        background: radial-gradient(circle at top right, #111c33 0%, #070b14 60%);
+        color: #f8fafc;
     }}
 
     {watermark_css}
 
-    [data-testid="stSidebar"] {{
-        background-color: #111a28;
-        border-right: 1px solid #1f2e45;
-    }}
-
-    .stAlert {{
-        background-color: #162438 !important;
-        border: 1px solid #0056b3 !important;
+    /* Typografi i Kitman Labs-stil */
+    h1 {{
+        font-weight: 800 !important;
+        letter-spacing: -0.03em !important;
         color: #ffffff !important;
+        font-size: 2.1rem !important;
+        margin-bottom: 0.25rem !important;
     }}
 
+    h2, h3 {{
+        font-weight: 700 !important;
+        letter-spacing: -0.02em !important;
+        color: #e2e8f0 !important;
+    }}
+
+    /* Sidebar */
+    [data-testid="stSidebar"] {{
+        background-color: #0b1120;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }}
+
+    .sidebar-logo {{
+        width: 125px;
+        filter: grayscale(1) invert(1) contrast(2);
+        mix-blend-mode: screen;
+        margin-bottom: 8px;
+    }}
+
+    /* Micro-labels (uppercase) */
+    .kl-label {{
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: #94a3b8;
+        margin-bottom: 6px;
+    }}
+
+    /* Performance-kort */
+    .kl-card {{
+        background: rgba(15, 23, 42, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 18px 20px;
+        backdrop-filter: blur(8px);
+        margin-bottom: 16px;
+    }}
+
+    .kl-kpi-grid {{
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 14px;
+        margin-bottom: 16px;
+    }}
+
+    .kl-kpi {{
+        background: rgba(15, 23, 42, 0.78);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 14px 16px;
+    }}
+
+    .kl-kpi-value {{
+        font-size: 1.65rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #ffffff;
+        line-height: 1.2;
+    }}
+
+    .kl-kpi-unit {{
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #64748b;
+    }}
+
+    /* Træningsplan-banner */
+    .kl-schedule {{
+        background: rgba(30, 58, 138, 0.22);
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        border-left: 4px solid #3b82f6;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        font-size: 0.92rem;
+        color: #e2e8f0;
+    }}
+
+    /* Knapper */
     .stButton>button {{
         background-color: #ffffff !important;
-        color: #0c121c !important;
-        border-radius: 4px;
-        font-weight: bold;
+        color: #070b14 !important;
+        border: none !important;
+        border-radius: 6px !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.01em !important;
+        padding: 0.45rem 1rem !important;
+    }}
+
+    .stButton>button:hover {{
+        background-color: #e2e8f0 !important;
     }}
 
     /* FIFA 13 Restitutionsbar */
     .cylinder-bar-bg {{
-        background: #1d2836;
-        border: 2px solid #2e3e53;
+        background: #131c2e;
+        border: 1.5px solid #26354d;
         border-radius: 12px;
-        height: 28px;
+        height: 26px;
         width: 100%;
         position: relative;
         overflow: hidden;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.05);
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.65);
+        margin-top: 10px;
     }}
 
     .cylinder-bar-fill {{
         height: 100%;
         border-radius: 10px 0 0 10px;
-        box-shadow: inset 0 6px 12px rgba(255,255,255,0.4), inset 0 -6px 12px rgba(0,0,0,0.4);
+        box-shadow: inset 0 6px 10px rgba(255,255,255,0.35), inset 0 -6px 10px rgba(0,0,0,0.4);
         transition: width 0.5s ease-in-out;
     }}
 
@@ -182,8 +275,8 @@ def check_deadline_status(tid_str: str) -> str:
     try:
         t = datetime.strptime(tid_str, "%H:%M").time()
         if t <= datetime.strptime("12:00", "%H:%M").time():
-            return f"Modtaget kl. {tid_str} (inden deadline kl. 12:00)"
-        return f"Modtaget sent kl. {tid_str} (efter kl. 12:00)"
+            return f"Modtaget kl. {tid_str} · Inden deadline (12:00)"
+        return f"Modtaget sent kl. {tid_str} · Efter deadline (12:00)"
     except Exception:
         return f"Modtaget kl. {tid_str}"
 
@@ -200,11 +293,12 @@ if "coach_logged_in" not in st.session_state:
     st.session_state["coach_logged_in"] = False
 
 if not st.session_state["coach_logged_in"]:
-    st.title("AGF Svømning – Træner Login")
-    st.write("Indtast pinkode for at åbne dashboardet.")
+    st.markdown('<div class="kl-label">AGF SVØMNING · PERFORMANCE</div>', unsafe_allow_html=True)
+    st.title("Træner Login")
+    st.write("Indtast pinkode for at tilgå atletdata.")
     with st.form("login_form"):
         pin_input = st.text_input("Pinkode", type="password", max_chars=10)
-        submitted = st.form_submit_button("Log ind", type="primary")
+        submitted = st.form_submit_button("Log ind")
         if submitted:
             if pin_input == get_coach_pin():
                 st.session_state["coach_logged_in"] = True
@@ -216,23 +310,25 @@ if not st.session_state["coach_logged_in"]:
 
 # --- SIDEBAR ---
 with st.sidebar:
-    if os.path.exists(LOGO_FILE):
-        st.image(LOGO_FILE, width=130)
-    st.subheader("Agf 1 trup")
+    if logo_b64:
+        st.markdown(
+            f'<img src="data:image/png;base64,{logo_b64}" class="sidebar-logo" alt="AGF Svømning">',
+            unsafe_allow_html=True,
+        )
+    st.markdown('<div class="kl-label">AGF SVØMNING · PERFORMANCE</div>', unsafe_allow_html=True)
+    st.selectbox("Vælg atlet", [ATHLETE_NAME])
 
-    st.caption("Vælg atlet fra liste:")
-    st.selectbox("Atlet", [ATHLETE_NAME])
-
-    if st.button("Hent nyeste svar"):
+    if st.button("Opdatér data"):
         st.cache_data.clear()
         st.rerun()
 
     st.divider()
-    st.caption("Data opdateres automatisk fra Google Sheets hvert minut.")
+    st.caption("Synkroniserer automatisk med Google Sheets hvert minut.")
 
 
 # --- TRÆNER-DASHBOARD ---
-st.title(f"Træner-dashboard – {ATHLETE_NAME}")
+st.markdown('<div class="kl-label">ATLET-OVERBLIK · DAGLIG PARATHED</div>', unsafe_allow_html=True)
+st.title(f"{ATHLETE_NAME}")
 
 if "INDSÆT_DIT_CSV_LINK_HER" in SHEET_CSV_URL:
     st.error("Husk at indsætte dit Google Sheets `.csv`-link i `SHEET_CSV_URL` i `app.py`.")
@@ -241,20 +337,30 @@ if "INDSÆT_DIT_CSV_LINK_HER" in SHEET_CSV_URL:
 try:
     df = load_sheet_data(SHEET_CSV_URL)
 except Exception as e:
-    st.error(f"Kunne ikke hente data fra Google Sheets. Tjek at linket er publiceret som .csv. Fejl: {e}")
+    st.error(f"Kunne ikke hente data fra Google Sheets. Fejl: {e}")
     st.stop()
 
-valgt_dato = st.date_input("Vælg træningsdag", value=date.today())
+valgt_dato = st.date_input("Træningsdato", value=date.today())
 valgt_dato_str = valgt_dato.isoformat()
 ugedag_info = TRAINING_SCHEDULE[valgt_dato.weekday()]
+pas_tekst = "  ·  ".join(ugedag_info["pas"])
 
-pas_tekst = "  |  ".join(ugedag_info["pas"])
-st.info(f"**{ugedag_info['dag']} ({valgt_dato.strftime('%d/%m/%Y')}) – Planlagte pas:** {pas_tekst}")
+st.markdown(
+    f"""
+    <div class="kl-schedule">
+        <span style="color:#93c5fd; font-weight:700; text-transform:uppercase; font-size:0.78rem; letter-spacing:0.06em;">
+            {ugedag_info['dag']} {valgt_dato.strftime('%d/%m/%Y')}
+        </span><br>
+        <strong>Planlagte pas:</strong> {pas_tekst}
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 col_left, col_right = st.columns([1, 1.35], gap="large")
 
 with col_left:
-    st.subheader("Dagens status")
+    st.markdown('<div class="kl-label">DAGENS STATUS</div>', unsafe_allow_html=True)
 
     if df.empty:
         st.warning("Ingen svar fundet i Google Sheetet endnu.")
@@ -270,53 +376,74 @@ with col_left:
                 float(row["mental_friskhed"]),
                 float(row["fysisk_friskhed"]),
             )
-
             percentage = int(score * 10)
+            deadline_txt = check_deadline_status(str(row["tidspunkt_sendt"]))
 
+            # Paratheds-kort med FIFA 13 restitutionsbar
             st.markdown(
                 f"""
-                <div style="margin-bottom: 12px;">
-                    <span style="font-size: 1.5rem; font-weight: bold; color: #ffffff;">Parathed: <span style="font-size: 1.8rem;">{score}</span> / 10</span><br>
-                    <span style="font-size: 1.1rem; color: #a4b3c6; font-weight: bold;">{status_tekst}</span>
-                </div>
-                <div class="cylinder-bar-bg">
-                    <div class="cylinder-bar-fill {fill_class}" style="width: {percentage}%;"></div>
+                <div class="kl-card">
+                    <div class="kl-label">SAMLET PARATHEDSSCORE</div>
+                    <div style="display:flex; align-items:baseline; justify-content:space-between;">
+                        <span style="font-size: 2.1rem; font-weight: 800; letter-spacing: -0.03em; color: #ffffff;">
+                            {score} <span style="font-size: 1rem; font-weight: 500; color: #64748b;">/ 10</span>
+                        </span>
+                        <span style="font-size: 0.9rem; font-weight: 600; color: #cbd5e1;">{status_tekst}</span>
+                    </div>
+                    <div class="cylinder-bar-bg">
+                        <div class="cylinder-bar-fill {fill_class}" style="width: {percentage}%;"></div>
+                    </div>
+                    <div style="font-size: 0.78rem; color: #64748b; margin-top: 10px;">{deadline_txt}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-            st.caption(check_deadline_status(str(row["tidspunkt_sendt"])))
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Søvn", f"{row['soevn_timer']} t")
-            m2.metric("Mental friskhed", f"{int(row['mental_friskhed'])} / 10")
-            m3.metric("Fysisk friskhed", f"{int(row['fysisk_friskhed'])} / 10")
-
-            st.markdown("**Kommentar fra atleten:**")
-            kommentar = str(row["kommentar"]).strip()
-            if kommentar:
-                st.markdown(
-                    f"""
-                    <div style="background-color: #162438; border-left: 4px solid #ffffff; padding: 10px; border-radius: 0 4px 4px 0;">
-                        <i>"{kommentar}"</i>
+            # 3 KPI-kort i Kitman Labs-stil
+            st.markdown(
+                f"""
+                <div class="kl-kpi-grid">
+                    <div class="kl-kpi">
+                        <div class="kl-label">SØVN</div>
+                        <div class="kl-kpi-value">{row['soevn_timer']} <span class="kl-kpi-unit">t</span></div>
                     </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.caption("Ingen kommentar tilføjet.")
+                    <div class="kl-kpi">
+                        <div class="kl-label">MENTAL</div>
+                        <div class="kl-kpi-value">{int(row['mental_friskhed'])} <span class="kl-kpi-unit">/ 10</span></div>
+                    </div>
+                    <div class="kl-kpi">
+                        <div class="kl-label">FYSISK</div>
+                        <div class="kl-kpi-value">{int(row['fysisk_friskhed'])} <span class="kl-kpi-unit">/ 10</span></div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-    st.divider()
-    with st.expander("Polar-sensor data (kommer i v2)", expanded=False):
+            # Kommentar-kort
+            kommentar = str(row["kommentar"]).strip()
+            kommentar_indhold = f'"{kommentar}"' if kommentar else "Ingen kommentar tilføjet."
+            kommentar_farve = "#e2e8f0" if kommentar else "#64748b"
+            st.markdown(
+                f"""
+                <div class="kl-card">
+                    <div class="kl-label">ATLET-KOMMENTAR</div>
+                    <div style="font-size: 0.95rem; color: {kommentar_farve}; font-style: italic;">
+                        {kommentar_indhold}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    with st.expander("Polar-sensor data (v2)", expanded=False):
         st.caption(
             "Her kobles puls, kcal og minutter i pulszone 1–5 på, når "
             "sensor-compliance er på plads."
         )
 
 with col_right:
-    st.subheader("Tendens – sidste 7 målinger")
+    st.markdown('<div class="kl-label">TENDENS · SIDSTE 7 MÅLINGER</div>', unsafe_allow_html=True)
 
     if df.empty:
         st.info("Ingen historik endnu.")
@@ -334,8 +461,8 @@ with col_right:
                     x=df_hist["dato_label"],
                     y=df_hist["fysisk_friskhed"],
                     mode="lines+markers",
-                    name="Fysisk friskhed (1-10)",
-                    line=dict(color="#2ca02c", width=3),
+                    name="Fysisk (1-10)",
+                    line=dict(color="#22c55e", width=3),
                     marker=dict(size=8),
                 )
             )
@@ -344,8 +471,8 @@ with col_right:
                     x=df_hist["dato_label"],
                     y=df_hist["mental_friskhed"],
                     mode="lines+markers",
-                    name="Mental friskhed (1-10)",
-                    line=dict(color="#1f77b4", width=3),
+                    name="Mental (1-10)",
+                    line=dict(color="#3b82f6", width=3),
                     marker=dict(size=8),
                 )
             )
@@ -355,7 +482,7 @@ with col_right:
                     y=df_hist["soevn_timer"],
                     mode="lines+markers",
                     name="Søvn (timer)",
-                    line=dict(color="#ffffff", width=2, dash="dot"),
+                    line=dict(color="#e2e8f0", width=2, dash="dot"),
                     marker=dict(size=7),
                 )
             )
@@ -363,36 +490,38 @@ with col_right:
             fig.add_hline(
                 y=5,
                 line_dash="dash",
-                line_color="rgba(220, 53, 69, 0.45)",
+                line_color="rgba(239, 68, 68, 0.5)",
                 annotation_text="OBS-grænse (5)",
                 annotation_position="bottom right",
+                annotation_font=dict(color="#f87171", size=11),
             )
 
             fig.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family="Inter, sans-serif", color="#94a3b8"),
+                paper_bgcolor="rgba(15, 23, 42, 0.72)",
+                plot_bgcolor="rgba(0, 0, 0, 0)",
                 yaxis=dict(
                     range=[0, 10.5],
                     title="Score / Timer",
-                    gridcolor="#1f2e45",
-                    zerolinecolor="#1f2e45",
-                    tickfont=dict(color="#a4b3c6"),
+                    gridcolor="rgba(255, 255, 255, 0.06)",
+                    zerolinecolor="rgba(255, 255, 255, 0.08)",
+                    tickfont=dict(color="#94a3b8"),
                 ),
                 xaxis=dict(
                     title="Dato",
-                    gridcolor="#1f2e45",
-                    tickfont=dict(color="#a4b3c6"),
+                    gridcolor="rgba(255, 255, 255, 0.06)",
+                    tickfont=dict(color="#94a3b8"),
                 ),
                 legend=dict(
                     orientation="h",
                     yanchor="bottom",
-                    y=1.02,
+                    y=1.03,
                     xanchor="left",
                     x=0,
-                    font=dict(color="#ffffff"),
+                    font=dict(color="#e2e8f0", size=12),
                 ),
-                margin=dict(l=10, r=10, t=40, b=10),
-                height=380,
+                margin=dict(l=16, r=16, t=44, b=16),
+                height=390,
                 hovermode="x unified",
             )
 
