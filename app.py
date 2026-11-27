@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4z1vstw_vNusCuZdgYesIYbmvI52mD3sYKlTykpk370wyGAnfpbdru0VCj7c7CX9JBWzeBi_d1Evf/pub?gid=941831444&single=true&output=csv"
-ATHLETE_NAME = "Sofus"
+ATHLETE_NAME = "Sofus Balladone"
 LOGO_FILE = "agf_logo.png"
 
 # Faste træningstider (0 = Mandag ... 6 = Søndag)
