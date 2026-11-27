@@ -19,15 +19,14 @@ LOGO_FILE = "agf_logo.png"
 
 # Faste træningstider (0 = Mandag ... 6 = Søndag)
 TRAINING_SCHEDULE = {
-    0: {"dag": "Mandag", "pas": ["Aften: 15:45 – 17:45"]},
+    0: {"dag": "Mandag", "pas": ["Morgen: 05:50 – 07:30", "Aften: 15:45 – 17:45"]},
     1: {"dag": "Tirsdag", "pas": ["Morgen: 05:50 – 07:30", "Aften: 15:30 – 17:30"]},
     2: {"dag": "Onsdag", "pas": ["Aften: 15:30 – 17:30"]},
     3: {"dag": "Torsdag", "pas": ["Morgen: 05:50 – 07:30", "Aften: 16:00 – 18:00"]},
-    4: {"dag": "Fredag", "pas": ["Ingen fast planlagt træning"]},
-    5: {"dag": "Lørdag", "pas": ["Ingen fast planlagt træning"]},
+    4: {"dag": "Fredag", "pas": ["Morgen: 05:50 – 07:30"]},
+    5: {"dag": "Lørdag", "pas": ["Morgen: 06:00 – 08:00"]},
     6: {"dag": "Søndag", "pas": ["Ingen fast planlagt træning"]},
 }
-
 
 # --- INDLÆS LOGO TIL BAGGRUND & SIDEBAR ---
 def get_base64_image(image_path: str) -> str:
