@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4z1vstw_vNusCuZdgYesIYbmvI52mD3sYKlTykpk370wyGAnfpbdru0VCj7c7CX9JBWzeBi_d1Evf/pub?gid=941831444&single=true&output=csv"
+SHEET_CSV_URL = "INDSÆT_DIT_CSV_LINK_HER"
 ATHLETE_NAME = "Sofus"
 LOGO_FILE = "agf_logo.png"
 
@@ -28,6 +28,7 @@ TRAINING_SCHEDULE = {
     6: {"dag": "Søndag", "pas": ["Ingen fast planlagt træning"]},
 }
 
+
 # --- INDLÆS LOGO TIL BAGGRUND & SIDEBAR ---
 def get_base64_image(image_path: str) -> str:
     if not os.path.exists(image_path):
@@ -38,7 +39,7 @@ def get_base64_image(image_path: str) -> str:
 
 logo_b64 = get_base64_image(LOGO_FILE)
 
-# --- KITMAN LABS / AGF PERFORMANCE TEMA (CSS) ---
+# --- AGF.DK FARVETEMA & FIFA 13 RESTITUTIONSBAR (CSS) ---
 watermark_css = (
     f"""
     .stApp::before {{
@@ -66,38 +67,42 @@ watermark_css = (
 st.markdown(
     f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap');
 
     html, body, [class*="css"], .stApp {{
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     }}
 
+    /* AGF.dk dyb midnatsblå baggrund */
     .stApp {{
-        background: radial-gradient(circle at top right, #111c33 0%, #070b14 60%);
-        color: #f8fafc;
+        background-color: #131727;
+        color: #ffffff;
     }}
 
     {watermark_css}
 
-    /* Typografi i Kitman Labs-stil */
+    /* AGF.dk overskrifter i Montserrat */
     h1 {{
+        font-family: 'Montserrat', sans-serif !important;
         font-weight: 800 !important;
-        letter-spacing: -0.03em !important;
+        text-transform: uppercase;
+        letter-spacing: 0.02em !important;
         color: #ffffff !important;
-        font-size: 2.1rem !important;
+        font-size: 2.05rem !important;
         margin-bottom: 0.25rem !important;
     }}
 
     h2, h3 {{
+        font-family: 'Montserrat', sans-serif !important;
         font-weight: 700 !important;
-        letter-spacing: -0.02em !important;
-        color: #e2e8f0 !important;
+        letter-spacing: 0.01em !important;
+        color: #ffffff !important;
     }}
 
-    /* Sidebar */
+    /* Sidebar i mørkere AGF-marine */
     [data-testid="stSidebar"] {{
-        background-color: #0b1120;
-        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        background-color: #0e111e;
+        border-right: 1px solid rgba(255, 255, 255, 0.14);
     }}
 
     .sidebar-logo {{
@@ -107,27 +112,27 @@ st.markdown(
         margin-bottom: 8px;
     }}
 
-    /* Micro-labels (uppercase) */
-    .kl-label {{
+    /* Micro-labels (uppercase i AGF-stil) */
+    .agf-label {{
+        font-family: 'Montserrat', sans-serif;
         font-size: 0.72rem;
-        font-weight: 600;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.09em;
-        color: #94a3b8;
+        letter-spacing: 0.1em;
+        color: #b8c0d4;
         margin-bottom: 6px;
     }}
 
-    /* Performance-kort */
-    .kl-card {{
-        background: rgba(15, 23, 42, 0.72);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 10px;
+    /* AGF.dk kort med skarp kant */
+    .agf-card {{
+        background-color: rgba(27, 32, 54, 0.88);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 6px;
         padding: 18px 20px;
-        backdrop-filter: blur(8px);
         margin-bottom: 16px;
     }}
 
-    .kl-kpi-grid {{
+    .agf-kpi-grid {{
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 12px;
@@ -135,64 +140,71 @@ st.markdown(
         margin-bottom: 16px;
     }}
 
-    .kl-kpi {{
-        background: rgba(15, 23, 42, 0.78);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 10px;
+    .agf-kpi {{
+        background-color: rgba(27, 32, 54, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 6px;
         padding: 14px 16px;
     }}
 
-    .kl-kpi-value {{
+    .agf-kpi-value {{
+        font-family: 'Montserrat', sans-serif;
         font-size: 1.65rem;
-        font-weight: 700;
+        font-weight: 800;
         letter-spacing: -0.02em;
         color: #ffffff;
         line-height: 1.2;
     }}
 
-    .kl-kpi-unit {{
-        font-size: 0.9rem;
+    .agf-kpi-unit {{
+        font-family: 'Inter', sans-serif;
+        font-size: 0.88rem;
         font-weight: 500;
-        color: #64748b;
+        color: #9ba5be;
     }}
 
-    /* Træningsplan-banner */
-    .kl-schedule {{
-        background: rgba(30, 58, 138, 0.22);
-        border: 1px solid rgba(59, 130, 246, 0.35);
-        border-left: 4px solid #3b82f6;
-        border-radius: 8px;
-        padding: 12px 16px;
-        margin-bottom: 20px;
+    /* Træningsplan-banner i AGF-stil */
+    .agf-schedule {{
+        background-color: rgba(27, 32, 54, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-left: 4px solid #ffffff;
+        border-radius: 6px;
+        padding: 13px 18px;
+        margin-bottom: 22px;
         font-size: 0.92rem;
-        color: #e2e8f0;
+        color: #ffffff;
     }}
 
-    /* Knapper */
-    .stButton>button {{
+    /* AGF.dk pille-formede hvide knapper */
+    .stButton>button, [data-testid="stFormSubmitButton"]>button {{
         background-color: #ffffff !important;
-        color: #070b14 !important;
+        color: #131727 !important;
         border: none !important;
-        border-radius: 6px !important;
-        font-weight: 600 !important;
-        letter-spacing: -0.01em !important;
-        padding: 0.45rem 1rem !important;
+        border-radius: 999px !important;
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 0.76rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.06em !important;
+        padding: 0.55rem 1.35rem !important;
+        transition: all 0.2s ease !important;
     }}
 
-    .stButton>button:hover {{
-        background-color: #e2e8f0 !important;
+    .stButton>button:hover, [data-testid="stFormSubmitButton"]>button:hover {{
+        background-color: #e2e6f0 !important;
+        transform: translateY(-1px);
     }}
 
     /* FIFA 13 Restitutionsbar */
     .cylinder-bar-bg {{
-        background: #131c2e;
-        border: 1.5px solid #26354d;
+        background: #0e111e;
+        border: 1.5px solid rgba(255, 255, 255, 0.2);
         border-radius: 12px;
         height: 26px;
         width: 100%;
         position: relative;
         overflow: hidden;
-        box-shadow: inset 0 2px 5px rgba(0,0,0,0.65);
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.7);
         margin-top: 10px;
     }}
 
@@ -218,11 +230,25 @@ st.markdown(
 )
 
 
-# --- DATAHENTNING FRA GOOGLE SHEETS ---
+# --- BEREGNING & DATAHENTNING ---
 def clean_danish_timestamp(val: str) -> str:
     s = str(val).strip()
     s = re.sub(r"(\d{1,2})\.(\d{2})\.(\d{2})", r"\1:\2:\3", s)
     return s
+
+
+def calc_readiness_score(soevn: float, mental: float, fysisk: float) -> float:
+    soevn_score = min(10.0, max(1.0, (soevn / 8.0) * 10.0))
+    return round((soevn_score + mental + fysisk) / 3.0, 1)
+
+
+def get_readiness_status(score: float):
+    if score >= 7.5:
+        return "Klar til fuld belastning", "glow-green"
+    elif score >= 5.5:
+        return "Moderat parathed – overvej justering", "glow-yellow"
+    else:
+        return "Lav parathed – tag en snak / sænk volumen", "glow-red"
 
 
 @st.cache_data(ttl=60)
@@ -254,20 +280,17 @@ def load_sheet_data(url: str) -> pd.DataFrame:
     else:
         df["kommentar"] = ""
 
-    df = df.sort_values("timestamp").drop_duplicates(subset=["dato"], keep="last")
-    return df.reset_index(drop=True)
+    df = df.sort_values("timestamp").drop_duplicates(subset=["dato"], keep="last").reset_index(drop=True)
 
-
-def calc_readiness(soevn: float, mental: float, fysisk: float):
-    soevn_score = min(10.0, max(1.0, (soevn / 8.0) * 10.0))
-    score = round((soevn_score + mental + fysisk) / 3.0, 1)
-
-    if score >= 7.5:
-        return score, "Klar til fuld belastning", "glow-green"
-    elif score >= 5.5:
-        return score, "Moderat parathed – overvej justering", "glow-yellow"
-    else:
-        return score, "Lav parathed – tag en snak / sænk volumen", "glow-red"
+    df["samlet_score"] = df.apply(
+        lambda r: calc_readiness_score(
+            float(r["soevn_timer"]),
+            float(r["mental_friskhed"]),
+            float(r["fysisk_friskhed"]),
+        ),
+        axis=1,
+    )
+    return df
 
 
 def check_deadline_status(tid_str: str) -> str:
@@ -292,12 +315,12 @@ if "coach_logged_in" not in st.session_state:
     st.session_state["coach_logged_in"] = False
 
 if not st.session_state["coach_logged_in"]:
-    st.markdown('<div class="kl-label">AGF SVØMNING · PERFORMANCE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="agf-label">AGF SVØMNING · PERFORMANCE</div>', unsafe_allow_html=True)
     st.title("Træner Login")
     st.write("Indtast pinkode for at tilgå atletdata.")
     with st.form("login_form"):
         pin_input = st.text_input("Pinkode", type="password", max_chars=10)
-        submitted = st.form_submit_button("Log ind")
+        submitted = st.form_submit_button("Log ind →")
         if submitted:
             if pin_input == get_coach_pin():
                 st.session_state["coach_logged_in"] = True
@@ -314,7 +337,7 @@ with st.sidebar:
             f'<img src="data:image/png;base64,{logo_b64}" class="sidebar-logo" alt="AGF Svømning">',
             unsafe_allow_html=True,
         )
-    st.markdown('<div class="kl-label">AGF SVØMNING · PERFORMANCE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="agf-label">AGF SVØMNING · PERFORMANCE</div>', unsafe_allow_html=True)
     st.selectbox("Vælg atlet", [ATHLETE_NAME])
 
     if st.button("Opdatér data"):
@@ -326,7 +349,7 @@ with st.sidebar:
 
 
 # --- TRÆNER-DASHBOARD ---
-st.markdown('<div class="kl-label">ATLET-OVERBLIK · DAGLIG PARATHED</div>', unsafe_allow_html=True)
+st.markdown('<div class="agf-label">ATLET-OVERBLIK · DAGLIG PARATHED</div>', unsafe_allow_html=True)
 st.title(f"{ATHLETE_NAME}")
 
 if "INDSÆT_DIT_CSV_LINK_HER" in SHEET_CSV_URL:
@@ -346,8 +369,8 @@ pas_tekst = "  ·  ".join(ugedag_info["pas"])
 
 st.markdown(
     f"""
-    <div class="kl-schedule">
-        <span style="color:#93c5fd; font-weight:700; text-transform:uppercase; font-size:0.78rem; letter-spacing:0.06em;">
+    <div class="agf-schedule">
+        <span style="color:#b8c0d4; font-family:'Montserrat',sans-serif; font-weight:700; text-transform:uppercase; font-size:0.75rem; letter-spacing:0.08em;">
             {ugedag_info['dag']} {valgt_dato.strftime('%d/%m/%Y')}
         </span><br>
         <strong>Planlagte pas:</strong> {pas_tekst}
@@ -359,7 +382,7 @@ st.markdown(
 col_left, col_right = st.columns([1, 1.35], gap="large")
 
 with col_left:
-    st.markdown('<div class="kl-label">DAGENS STATUS</div>', unsafe_allow_html=True)
+    st.markdown('<div class="agf-label">DAGENS STATUS</div>', unsafe_allow_html=True)
 
     if df.empty:
         st.warning("Ingen svar fundet i Google Sheetet endnu.")
@@ -370,49 +393,46 @@ with col_left:
             st.warning(f"Ingen melding modtaget fra {ATHLETE_NAME} for denne dato endnu (deadline kl. 12:00).")
         else:
             row = dagens_raekke.iloc[-1]
-            score, status_tekst, fill_class = calc_readiness(
-                float(row["soevn_timer"]),
-                float(row["mental_friskhed"]),
-                float(row["fysisk_friskhed"]),
-            )
+            score = float(row["samlet_score"])
+            status_tekst, fill_class = get_readiness_status(score)
             percentage = int(score * 10)
             deadline_txt = check_deadline_status(str(row["tidspunkt_sendt"]))
 
             # Paratheds-kort med FIFA 13 restitutionsbar
             st.markdown(
                 f"""
-                <div class="kl-card">
-                    <div class="kl-label">SAMLET PARATHEDSSCORE</div>
+                <div class="agf-card">
+                    <div class="agf-label">SAMLET PARATHEDSSCORE</div>
                     <div style="display:flex; align-items:baseline; justify-content:space-between;">
-                        <span style="font-size: 2.1rem; font-weight: 800; letter-spacing: -0.03em; color: #ffffff;">
-                            {score} <span style="font-size: 1rem; font-weight: 500; color: #64748b;">/ 10</span>
+                        <span style="font-family:'Montserrat',sans-serif; font-size: 2.15rem; font-weight: 800; letter-spacing: -0.02em; color: #ffffff;">
+                            {score} <span style="font-family:'Inter',sans-serif; font-size: 1rem; font-weight: 500; color: #9ba5be;">/ 10</span>
                         </span>
-                        <span style="font-size: 0.9rem; font-weight: 600; color: #cbd5e1;">{status_tekst}</span>
+                        <span style="font-size: 0.9rem; font-weight: 600; color: #ffffff;">{status_tekst}</span>
                     </div>
                     <div class="cylinder-bar-bg">
                         <div class="cylinder-bar-fill {fill_class}" style="width: {percentage}%;"></div>
                     </div>
-                    <div style="font-size: 0.78rem; color: #64748b; margin-top: 10px;">{deadline_txt}</div>
+                    <div style="font-size: 0.78rem; color: #9ba5be; margin-top: 10px;">{deadline_txt}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-            # 3 KPI-kort i Kitman Labs-stil
+            # 3 KPI-kort
             st.markdown(
                 f"""
-                <div class="kl-kpi-grid">
-                    <div class="kl-kpi">
-                        <div class="kl-label">SØVN</div>
-                        <div class="kl-kpi-value">{row['soevn_timer']} <span class="kl-kpi-unit">t</span></div>
+                <div class="agf-kpi-grid">
+                    <div class="agf-kpi">
+                        <div class="agf-label">SØVN</div>
+                        <div class="agf-kpi-value">{row['soevn_timer']} <span class="agf-kpi-unit">t</span></div>
                     </div>
-                    <div class="kl-kpi">
-                        <div class="kl-label">MENTAL</div>
-                        <div class="kl-kpi-value">{int(row['mental_friskhed'])} <span class="kl-kpi-unit">/ 10</span></div>
+                    <div class="agf-kpi">
+                        <div class="agf-label">MENTAL</div>
+                        <div class="agf-kpi-value">{int(row['mental_friskhed'])} <span class="agf-kpi-unit">/ 10</span></div>
                     </div>
-                    <div class="kl-kpi">
-                        <div class="kl-label">FYSISK</div>
-                        <div class="kl-kpi-value">{int(row['fysisk_friskhed'])} <span class="kl-kpi-unit">/ 10</span></div>
+                    <div class="agf-kpi">
+                        <div class="agf-label">FYSISK</div>
+                        <div class="agf-kpi-value">{int(row['fysisk_friskhed'])} <span class="agf-kpi-unit">/ 10</span></div>
                     </div>
                 </div>
                 """,
@@ -422,11 +442,11 @@ with col_left:
             # Kommentar-kort
             kommentar = str(row["kommentar"]).strip()
             kommentar_indhold = f'"{kommentar}"' if kommentar else "Ingen kommentar tilføjet."
-            kommentar_farve = "#e2e8f0" if kommentar else "#64748b"
+            kommentar_farve = "#ffffff" if kommentar else "#9ba5be"
             st.markdown(
                 f"""
-                <div class="kl-card">
-                    <div class="kl-label">ATLET-KOMMENTAR</div>
+                <div class="agf-card">
+                    <div class="agf-label">ATLET-KOMMENTAR</div>
                     <div style="font-size: 0.95rem; color: {kommentar_farve}; font-style: italic;">
                         {kommentar_indhold}
                     </div>
@@ -435,14 +455,11 @@ with col_left:
                 unsafe_allow_html=True,
             )
 
-    with st.expander("Polar-sensor data (v2)", expanded=False):
-        st.caption(
-            "Her kobles puls, kcal og minutter i pulszone 1–5 på, når "
-            "sensor-compliance er på plads."
-        )
+    with st.expander("Polar Verity Sense · Træningsdata", expanded=False):
+        st.caption("Klargøres til automatisk synkronisering via Polar AccessLink API.")
 
 with col_right:
-    st.markdown('<div class="kl-label">TENDENS · SIDSTE 7 MÅLINGER</div>', unsafe_allow_html=True)
+    st.markdown('<div class="agf-label">TENDENS · SIDSTE 7 MÅLINGER</div>', unsafe_allow_html=True)
 
     if df.empty:
         st.info("Ingen historik endnu.")
@@ -455,14 +472,16 @@ with col_right:
             df_hist["dato_label"] = pd.to_datetime(df_hist["dato"]).dt.strftime("%d/%m")
 
             fig = go.Figure()
+
+            # 1. De tre baggrundslinjer (nedtonede)
             fig.add_trace(
                 go.Scatter(
                     x=df_hist["dato_label"],
                     y=df_hist["fysisk_friskhed"],
                     mode="lines+markers",
                     name="Fysisk (1-10)",
-                    line=dict(color="#22c55e", width=3),
-                    marker=dict(size=8),
+                    line=dict(color="rgba(74, 222, 128, 0.42)", width=1.8),
+                    marker=dict(size=5, color="rgba(74, 222, 128, 0.55)"),
                 )
             )
             fig.add_trace(
@@ -471,8 +490,8 @@ with col_right:
                     y=df_hist["mental_friskhed"],
                     mode="lines+markers",
                     name="Mental (1-10)",
-                    line=dict(color="#3b82f6", width=3),
-                    marker=dict(size=8),
+                    line=dict(color="rgba(96, 165, 250, 0.42)", width=1.8),
+                    marker=dict(size=5, color="rgba(96, 165, 250, 0.55)"),
                 )
             )
             fig.add_trace(
@@ -481,35 +500,51 @@ with col_right:
                     y=df_hist["soevn_timer"],
                     mode="lines+markers",
                     name="Søvn (timer)",
-                    line=dict(color="#e2e8f0", width=2, dash="dot"),
-                    marker=dict(size=7),
+                    line=dict(color="rgba(184, 192, 212, 0.42)", width=1.6, dash="dot"),
+                    marker=dict(size=5, color="rgba(184, 192, 212, 0.55)"),
+                )
+            )
+
+            # 2. Samlet parathedsscore (tydelig hvid hovedlinje øverst)
+            fig.add_trace(
+                go.Scatter(
+                    x=df_hist["dato_label"],
+                    y=df_hist["samlet_score"],
+                    mode="lines+markers",
+                    name="Samlet parathed",
+                    line=dict(color="#ffffff", width=4),
+                    marker=dict(
+                        size=10,
+                        color="#ffffff",
+                        line=dict(width=2, color="#131727"),
+                    ),
                 )
             )
 
             fig.add_hline(
                 y=5,
                 line_dash="dash",
-                line_color="rgba(239, 68, 68, 0.5)",
+                line_color="rgba(239, 68, 68, 0.45)",
                 annotation_text="OBS-grænse (5)",
                 annotation_position="bottom right",
                 annotation_font=dict(color="#f87171", size=11),
             )
 
             fig.update_layout(
-                font=dict(family="Inter, sans-serif", color="#94a3b8"),
-                paper_bgcolor="rgba(15, 23, 42, 0.72)",
+                font=dict(family="Inter, sans-serif", color="#b8c0d4"),
+                paper_bgcolor="rgba(27, 32, 54, 0.88)",
                 plot_bgcolor="rgba(0, 0, 0, 0)",
                 yaxis=dict(
                     range=[0, 10.5],
                     title="Score / Timer",
-                    gridcolor="rgba(255, 255, 255, 0.06)",
-                    zerolinecolor="rgba(255, 255, 255, 0.08)",
-                    tickfont=dict(color="#94a3b8"),
+                    gridcolor="rgba(255, 255, 255, 0.08)",
+                    zerolinecolor="rgba(255, 255, 255, 0.12)",
+                    tickfont=dict(color="#b8c0d4"),
                 ),
                 xaxis=dict(
                     title="Dato",
-                    gridcolor="rgba(255, 255, 255, 0.06)",
-                    tickfont=dict(color="#94a3b8"),
+                    gridcolor="rgba(255, 255, 255, 0.08)",
+                    tickfont=dict(color="#b8c0d4"),
                 ),
                 legend=dict(
                     orientation="h",
@@ -517,10 +552,10 @@ with col_right:
                     y=1.03,
                     xanchor="left",
                     x=0,
-                    font=dict(color="#e2e8f0", size=12),
+                    font=dict(color="#ffffff", size=12),
                 ),
-                margin=dict(l=16, r=16, t=44, b=16),
-                height=390,
+                margin=dict(l=16, r=16, t=48, b=16),
+                height=395,
                 hovermode="x unified",
             )
 
@@ -528,10 +563,11 @@ with col_right:
 
             with st.expander("Se rå tal for de sidste 7 målinger"):
                 vis_df = df_hist[
-                    ["dato", "soevn_timer", "mental_friskhed", "fysisk_friskhed", "kommentar"]
+                    ["dato", "samlet_score", "soevn_timer", "mental_friskhed", "fysisk_friskhed", "kommentar"]
                 ].rename(
                     columns={
                         "dato": "Dato",
+                        "samlet_score": "Parathed",
                         "soevn_timer": "Søvn (t)",
                         "mental_friskhed": "Mental",
                         "fysisk_friskhed": "Fysisk",
