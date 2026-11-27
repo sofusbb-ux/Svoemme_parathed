@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-SHEET_CSV_URL = "INDSÆT_DIT_CSV_LINK_HER"
+SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4z1vstw_vNusCuZdgYesIYbmvI52mD3sYKlTykpk370wyGAnfpbdru0VCj7c7CX9JBWzeBi_d1Evf/pub?gid=941831444&single=true&output=csv"
 ATHLETE_NAME = "Sofus"
 LOGO_FILE = "agf_logo.png"
 
